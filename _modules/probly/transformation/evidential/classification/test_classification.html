@@ -5,7 +5,7 @@
     <meta name="color-scheme" content="light dark"><link rel="index" title="Index" href="../../../../../genindex.html" /><link rel="search" title="Search" href="../../../../../search.html" />
 
     <!-- Generated with Sphinx 8.2.3 and Furo 2024.08.06 -->
-        <title>probly.transformation.evidential.regression.common - probly 0.3.1 documentation</title>
+        <title>probly.transformation.evidential.classification.test_classification - probly 0.3.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../../_static/styles/furo.css?v=354aac6f" />
     <link rel="stylesheet" type="text/css" href="../../../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
@@ -356,50 +356,210 @@
           </label>
         </div>
         <article role="main" id="furo-main-content">
-          <h1>Source code for probly.transformation.evidential.regression.common</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Shared evidential regression implementation.&quot;&quot;&quot;</span>
+          <h1>Source code for probly.transformation.evidential.classification.test_classification</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Tests for evidential classification transformation.</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+<span class="sd">This module tests the probly.transformation.evidential.classification package,</span>
+<span class="sd">which transforms traditional neural networks into evidential classification models</span>
+<span class="sd">for uncertainty quantification.</span>
+<span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pytest</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">nn</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">probly.traverse_nn</span><span class="w"> </span><span class="kn">import</span> <span class="n">nn_compose</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pytraverse</span><span class="w"> </span><span class="kn">import</span> <span class="n">CLONE</span><span class="p">,</span> <span class="n">TRAVERSE_REVERSED</span><span class="p">,</span> <span class="n">GlobalVariable</span><span class="p">,</span> <span class="n">lazydispatch_traverser</span><span class="p">,</span> <span class="n">traverse</span>
-
-<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">lazy_dispatch.isinstance</span><span class="w"> </span><span class="kn">import</span> <span class="n">LazyType</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">probly.predictor</span><span class="w"> </span><span class="kn">import</span> <span class="n">Predictor</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">pytraverse.composition</span><span class="w"> </span><span class="kn">import</span> <span class="n">RegisteredLooseTraverser</span>
-
-<span class="n">REPLACED_LAST_LINEAR</span> <span class="o">=</span> <span class="n">GlobalVariable</span><span class="p">[</span><span class="nb">bool</span><span class="p">](</span>
-    <span class="s2">&quot;REPLACED_LAST_LINEAR&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;Whether the last linear layer has been replaced with a NormalInverseGammaLinear layer.&quot;</span><span class="p">,</span>
-    <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-<span class="p">)</span>
-
-<span class="n">evidential_regression_traverser</span> <span class="o">=</span> <span class="n">lazydispatch_traverser</span><span class="p">[</span><span class="nb">object</span><span class="p">](</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;evidential_regression_traverser&quot;</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">probly.transformation</span><span class="w"> </span><span class="kn">import</span> <span class="n">evidential_classification</span>
 
 
-<div class="viewcode-block" id="register">
-<a class="viewcode-back" href="../../../../../api/probly.transformation.evidential.regression.common.html#probly.transformation.register">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">register</span><span class="p">(</span><span class="bp">cls</span><span class="p">:</span> <span class="n">LazyType</span><span class="p">,</span> <span class="n">traverser</span><span class="p">:</span> <span class="n">RegisteredLooseTraverser</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Register a class to be replaced by a normal inverse gamma layer.&quot;&quot;&quot;</span>
-    <span class="n">evidential_regression_traverser</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="bp">cls</span><span class="o">=</span><span class="bp">cls</span><span class="p">,</span> <span class="n">traverser</span><span class="o">=</span><span class="n">traverser</span><span class="p">,</span> <span class="n">skip_if</span><span class="o">=</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">s</span><span class="p">[</span><span class="n">REPLACED_LAST_LINEAR</span><span class="p">])</span></div>
+<span class="c1"># ============================================================================</span>
+<span class="c1"># Fixtures</span>
+<span class="c1"># ============================================================================</span>
+
+<div class="viewcode-block" id="simple_model">
+<a class="viewcode-back" href="../../../../../api/probly.transformation.evidential.classification.test_classification.html#probly.transformation.evidential.classification.test_classification.simple_model">[docs]</a>
+<span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">simple_model</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a simple three-layer neural network for testing.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
+        <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">),</span>
+        <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span>
+        <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>  <span class="c1"># 3 classes</span>
+    <span class="p">)</span></div>
 
 
 
-<div class="viewcode-block" id="evidential_regression">
-<a class="viewcode-back" href="../../../../../api/probly.transformation.evidential.regression.common.html#probly.transformation.evidential_regression">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">evidential_regression</span><span class="p">[</span><span class="n">T</span><span class="p">:</span> <span class="n">Predictor</span><span class="p">](</span><span class="n">base</span><span class="p">:</span> <span class="n">T</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create an evidential regression predictor from a base predictor.</span>
+<div class="viewcode-block" id="mlp_model">
+<a class="viewcode-back" href="../../../../../api/probly.transformation.evidential.classification.test_classification.html#probly.transformation.evidential.classification.test_classification.mlp_model">[docs]</a>
+<span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">mlp_model</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a multi-layer perceptron (MLP) for testing.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
+        <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">),</span>
+        <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span>
+        <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
+        <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span>
+        <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>  <span class="c1"># 4 classes</span>
+    <span class="p">)</span></div>
 
-<span class="sd">    Args:</span>
-<span class="sd">        base: Predictor, The base model to be used for evidential regression.</span>
 
-<span class="sd">    Returns:</span>
-<span class="sd">        Predictor, The evidential regression predictor.</span>
+
+<div class="viewcode-block" id="single_layer_model">
+<a class="viewcode-back" href="../../../../../api/probly.transformation.evidential.classification.test_classification.html#probly.transformation.evidential.classification.test_classification.single_layer_model">[docs]</a>
+<span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">single_layer_model</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a single-layer model for edge case testing.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>  <span class="c1"># 2 classes</span></div>
+
+
+
+<div class="viewcode-block" id="sample_input">
+<a class="viewcode-back" href="../../../../../api/probly.transformation.evidential.classification.test_classification.html#probly.transformation.evidential.classification.test_classification.sample_input">[docs]</a>
+<span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">sample_input</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create sample input data: 5 samples, each with 10 dimensions.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># ============================================================================</span>
+<span class="c1"># Test 1: Basic Transformation</span>
+<span class="c1"># ============================================================================</span>
+
+<div class="viewcode-block" id="test_transformation_completes_successfully">
+<a class="viewcode-back" href="../../../../../api/probly.transformation.evidential.classification.test_classification.html#probly.transformation.evidential.classification.test_classification.test_transformation_completes_successfully">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_transformation_completes_successfully</span><span class="p">(</span><span class="n">simple_model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test that the transformation completes without errors.</span>
+<span class="sd">    </span>
+<span class="sd">    Verify that the evidential_classification() function runs successfully</span>
+<span class="sd">    and returns a valid PyTorch model.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">traverse</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="n">nn_compose</span><span class="p">(</span><span class="n">evidential_regression_traverser</span><span class="p">),</span> <span class="n">init</span><span class="o">=</span><span class="p">{</span><span class="n">TRAVERSE_REVERSED</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="n">CLONE</span><span class="p">:</span> <span class="kc">True</span><span class="p">})</span></div>
+    <span class="n">transformed_model</span> <span class="o">=</span> <span class="n">evidential_classification</span><span class="p">(</span><span class="n">simple_model</span><span class="p">)</span>
+
+    <span class="k">assert</span> <span class="n">transformed_model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> \
+        <span class="s2">&quot;Transformed model should not be None&quot;</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">transformed_model</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">),</span> \
+        <span class="s2">&quot;Transformed model should be a PyTorch Module&quot;</span></div>
+
+
+
+<span class="c1"># ============================================================================</span>
+<span class="c1"># Test 2: Layer Replacement Verification</span>
+<span class="c1"># ============================================================================</span>
+
+<div class="viewcode-block" id="test_last_linear_layer_replaced_with_softplus">
+<a class="viewcode-back" href="../../../../../api/probly.transformation.evidential.classification.test_classification.html#probly.transformation.evidential.classification.test_classification.test_last_linear_layer_replaced_with_softplus">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_last_linear_layer_replaced_with_softplus</span><span class="p">(</span><span class="n">simple_model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test that the last Linear layer is replaced with nn.Softplus.</span>
+<span class="sd">    </span>
+<span class="sd">    This is the core functionality of evidential classification.</span>
+<span class="sd">    Verify that the type of the last layer is correct.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">transformed_model</span> <span class="o">=</span> <span class="n">evidential_classification</span><span class="p">(</span><span class="n">simple_model</span><span class="p">)</span>
+    <span class="n">layers</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">transformed_model</span><span class="o">.</span><span class="n">children</span><span class="p">())</span>
+
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">layers</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">nn</span><span class="o">.</span><span class="n">Softplus</span><span class="p">),</span> \
+        <span class="s2">&quot;Last layer should be nn.Softplus&quot;</span></div>
+
+
+
+<span class="c1"># ============================================================================</span>
+<span class="c1"># Test 3: Single Layer Replacement</span>
+<span class="c1"># ============================================================================</span>
+
+<div class="viewcode-block" id="test_only_one_layer_is_replaced">
+<a class="viewcode-back" href="../../../../../api/probly.transformation.evidential.classification.test_classification.html#probly.transformation.evidential.classification.test_classification.test_only_one_layer_is_replaced">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_only_one_layer_is_replaced</span><span class="p">(</span><span class="n">mlp_model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test that only one layer is replaced, not all Linear layers.</span>
+<span class="sd">    </span>
+<span class="sd">    Verify that the transformation does not over-replace.</span>
+<span class="sd">    In a multi-layer network, only the last Linear layer should be replaced.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">transformed_model</span> <span class="o">=</span> <span class="n">evidential_classification</span><span class="p">(</span><span class="n">mlp_model</span><span class="p">)</span>
+
+    <span class="n">softplus_count</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span>
+        <span class="mi">1</span> <span class="k">for</span> <span class="n">module</span> <span class="ow">in</span> <span class="n">transformed_model</span><span class="o">.</span><span class="n">modules</span><span class="p">()</span> 
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Softplus</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="k">assert</span> <span class="n">softplus_count</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> \
+        <span class="sa">f</span><span class="s2">&quot;Should have exactly 1 nn.Softplus layer, but found </span><span class="si">{</span><span class="n">softplus_count</span><span class="si">}</span><span class="s2">&quot;</span></div>
+
+
+<span class="c1"># ============================================================================</span>
+<span class="c1"># Test 4: Edge Case - Single Layer Model</span>
+<span class="c1"># ============================================================================</span>
+
+<div class="viewcode-block" id="test_single_layer_model_edge_case">
+<a class="viewcode-back" href="../../../../../api/probly.transformation.evidential.classification.test_classification.html#probly.transformation.evidential.classification.test_classification.test_single_layer_model_edge_case">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_single_layer_model_edge_case</span><span class="p">(</span><span class="n">single_layer_model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test transformation on a single-layer model (edge case).</span>
+<span class="sd">    </span>
+<span class="sd">    Verify that even a single Linear layer can be correctly transformed.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">transformed_model</span> <span class="o">=</span> <span class="n">evidential_classification</span><span class="p">(</span><span class="n">single_layer_model</span><span class="p">)</span>
+
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">transformed_model</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Softplus</span><span class="p">),</span> \
+        <span class="s2">&quot;Single Linear layer should be replaced with nn.Softplus&quot;</span></div>
+
+
+
+<span class="c1"># ============================================================================</span>
+<span class="c1"># Test 5: Device Preservation</span>
+<span class="c1"># ============================================================================</span>
+
+<div class="viewcode-block" id="test_device_preservation_cpu">
+<a class="viewcode-back" href="../../../../../api/probly.transformation.evidential.classification.test_classification.html#probly.transformation.evidential.classification.test_classification.test_device_preservation_cpu">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_device_preservation_cpu</span><span class="p">(</span><span class="n">simple_model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test that CPU device is correctly preserved.</span>
+<span class="sd">    </span>
+<span class="sd">    Verify that the transformation does not change the model&#39;s device location.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">simple_model</span> <span class="o">=</span> <span class="n">simple_model</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span>
+    <span class="n">transformed_model</span> <span class="o">=</span> <span class="n">evidential_classification</span><span class="p">(</span><span class="n">simple_model</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">transformed_model</span><span class="o">.</span><span class="n">parameters</span><span class="p">():</span>
+        <span class="k">assert</span> <span class="n">param</span><span class="o">.</span><span class="n">device</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;cpu&#39;</span><span class="p">,</span> \
+            <span class="s2">&quot;Parameters should remain on CPU&quot;</span></div>
+
+
+<span class="c1"># ============================================================================</span>
+<span class="c1"># Test 6: Softplus Activation Verification</span>
+<span class="c1"># ============================================================================</span>
+
+<div class="viewcode-block" id="test_output_has_softplus_activation">
+<a class="viewcode-back" href="../../../../../api/probly.transformation.evidential.classification.test_classification.html#probly.transformation.evidential.classification.test_classification.test_output_has_softplus_activation">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_output_has_softplus_activation</span><span class="p">(</span><span class="n">simple_model</span><span class="p">,</span> <span class="n">sample_input</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test that the output has softplus activation applied.</span>
+<span class="sd">    </span>
+<span class="sd">    Verify that the evidential classification model applies softplus</span>
+<span class="sd">    activation to ensure positive concentration parameters.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">transformed_model</span> <span class="o">=</span> <span class="n">evidential_classification</span><span class="p">(</span><span class="n">simple_model</span><span class="p">)</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="n">transformed_model</span><span class="p">(</span><span class="n">sample_input</span><span class="p">)</span>
+
+    <span class="c1"># Extract the main output tensor</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+        <span class="n">output_tensor</span> <span class="o">=</span> <span class="n">output</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="c1"># Look for concentration parameters or main output</span>
+        <span class="n">output_tensor</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">output</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="s1">&#39;concentration&#39;</span> <span class="ow">in</span> <span class="n">key</span> <span class="ow">or</span> <span class="s1">&#39;evidence&#39;</span> <span class="ow">in</span> <span class="n">key</span> <span class="ow">or</span> <span class="s1">&#39;alpha&#39;</span> <span class="ow">in</span> <span class="n">key</span><span class="p">):</span>
+                <span class="n">output_tensor</span> <span class="o">=</span> <span class="n">value</span>
+                <span class="k">break</span>
+        <span class="k">if</span> <span class="n">output_tensor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Fallback to first tensor</span>
+            <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">output</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+                    <span class="n">output_tensor</span> <span class="o">=</span> <span class="n">value</span>
+                    <span class="k">break</span>
+
+    <span class="c1"># Check that all values are positive (due to softplus)</span>
+    <span class="k">assert</span> <span class="n">torch</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">output_tensor</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">),</span> \
+        <span class="s2">&quot;All output values should be non-negative due to softplus activation&quot;</span></div>
 
 </pre></div>
         </article>

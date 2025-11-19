@@ -11,4 +11,5 @@ probly.transformation.evidential.classification
    :recursive:
 
    common
+   test_classification
    torch

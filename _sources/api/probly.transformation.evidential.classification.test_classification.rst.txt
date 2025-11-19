@@ -1,0 +1,21 @@
+probly.transformation.evidential.classification.test\_classification
+====================================================================
+
+.. automodule:: probly.transformation.evidential.classification.test_classification
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      mlp_model
+      sample_input
+      simple_model
+      single_layer_model
+      test_device_preservation_cpu
+      test_last_linear_layer_replaced_with_softplus
+      test_only_one_layer_is_replaced
+      test_output_has_softplus_activation
+      test_single_layer_model_edge_case
+      test_transformation_completes_successfully
+   

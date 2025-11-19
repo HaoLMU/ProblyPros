@@ -286,6 +286,7 @@
 <li class="toctree-l3 has-children"><a class="reference internal" href="api/probly.transformation.evidential.html">probly.transformation.evidential</a><input class="toctree-checkbox" id="toctree-checkbox-15" name="toctree-checkbox-15" role="switch" type="checkbox"/><label for="toctree-checkbox-15"><div class="visually-hidden">Toggle navigation of probly.transformation.evidential</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l4 has-children"><a class="reference internal" href="api/probly.transformation.evidential.classification.html">probly.transformation.evidential.classification</a><input class="toctree-checkbox" id="toctree-checkbox-16" name="toctree-checkbox-16" role="switch" type="checkbox"/><label for="toctree-checkbox-16"><div class="visually-hidden">Toggle navigation of probly.transformation.evidential.classification</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l5"><a class="reference internal" href="api/probly.transformation.evidential.classification.common.html">probly.transformation.evidential.classification.common</a></li>
+<li class="toctree-l5"><a class="reference internal" href="api/probly.transformation.evidential.classification.test_classification.html">probly.transformation.evidential.classification.test_classification</a></li>
 <li class="toctree-l5"><a class="reference internal" href="api/probly.transformation.evidential.classification.torch.html">probly.transformation.evidential.classification.torch</a></li>
 </ul>
 </li>
@@ -801,6 +802,8 @@
           <li><a href="api/probly.representation.sampling.torch_sample.html#probly.representation.sampling.torch_sample.TorchTensorSample.mean">(probly.representation.sampling.torch_sample.TorchTensorSample method)</a>
 </li>
         </ul></li>
+        <li><a href="api/probly.transformation.evidential.classification.test_classification.html#probly.transformation.evidential.classification.test_classification.mlp_model">mlp_model() (in module probly.transformation.evidential.classification.test_classification)</a>
+</li>
         <li>
     module
 
@@ -882,6 +885,8 @@
           <li><a href="api/probly.transformation.evidential.classification.html#module-probly.transformation.evidential.classification">probly.transformation.evidential.classification</a>
 </li>
           <li><a href="api/probly.transformation.evidential.classification.common.html#module-probly.transformation.evidential.classification.common">probly.transformation.evidential.classification.common</a>
+</li>
+          <li><a href="api/probly.transformation.evidential.classification.test_classification.html#module-probly.transformation.evidential.classification.test_classification">probly.transformation.evidential.classification.test_classification</a>
 </li>
           <li><a href="api/probly.transformation.evidential.classification.torch.html#module-probly.transformation.evidential.classification.torch">probly.transformation.evidential.classification.torch</a>
 </li>
@@ -1280,6 +1285,13 @@
 </li>
         </ul></li>
         <li>
+    probly.transformation.evidential.classification.test_classification
+
+        <ul>
+          <li><a href="api/probly.transformation.evidential.classification.test_classification.html#module-probly.transformation.evidential.classification.test_classification">module</a>
+</li>
+        </ul></li>
+        <li>
     probly.transformation.evidential.classification.torch
 
         <ul>
@@ -1450,6 +1462,8 @@
           <li><a href="api/probly.representation.sampling.sampler.html#probly.representation.sampling.sampler.Sampler.sample_factory">(probly.representation.sampling.sampler.Sampler attribute)</a>
 </li>
         </ul></li>
+        <li><a href="api/probly.transformation.evidential.classification.test_classification.html#probly.transformation.evidential.classification.test_classification.sample_input">sample_input() (in module probly.transformation.evidential.classification.test_classification)</a>
+</li>
         <li><a href="api/probly.representation.html#probly.representation.Sampler">Sampler (class in probly.representation)</a>
 
         <ul>
@@ -1464,8 +1478,6 @@
           <li><a href="api/probly.representation.sampling.sampler.html#probly.representation.sampling.sampler.sampler_factory">(in module probly.representation.sampling.sampler)</a>
 </li>
         </ul></li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="api/probly.representation.html#probly.representation.Sampler.sampling_strategy">sampling_strategy (probly.representation.Sampler attribute)</a>
 
         <ul>
@@ -1474,9 +1486,15 @@
           <li><a href="api/probly.representation.sampling.sampler.html#probly.representation.sampling.sampler.Sampler.sampling_strategy">(probly.representation.sampling.sampler.Sampler attribute)</a>
 </li>
         </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="api/probly.evaluation.tasks.html#probly.evaluation.tasks.selective_prediction">selective_prediction() (in module probly.evaluation.tasks)</a>
 </li>
+        <li><a href="api/probly.transformation.evidential.classification.test_classification.html#probly.transformation.evidential.classification.test_classification.simple_model">simple_model() (in module probly.transformation.evidential.classification.test_classification)</a>
+</li>
         <li><a href="api/probly.plot.credal.html#probly.plot.credal.simplex_plot">simplex_plot() (in module probly.plot.credal)</a>
+</li>
+        <li><a href="api/probly.transformation.evidential.classification.test_classification.html#probly.transformation.evidential.classification.test_classification.single_layer_model">single_layer_model() (in module probly.transformation.evidential.classification.test_classification)</a>
 </li>
         <li><a href="api/probly.evaluation.metrics.html#probly.evaluation.metrics.spherical_score">spherical_score() (in module probly.evaluation.metrics)</a>
 </li>
@@ -1514,16 +1532,28 @@
         </ul></li>
         <li><a href="api/probly.utils.torch.html#probly.utils.torch.temperature_softmax">temperature_softmax() (in module probly.utils.torch)</a>
 </li>
+        <li><a href="api/probly.transformation.evidential.classification.test_classification.html#probly.transformation.evidential.classification.test_classification.test_device_preservation_cpu">test_device_preservation_cpu() (in module probly.transformation.evidential.classification.test_classification)</a>
+</li>
+        <li><a href="api/probly.transformation.evidential.classification.test_classification.html#probly.transformation.evidential.classification.test_classification.test_last_linear_layer_replaced_with_softplus">test_last_linear_layer_replaced_with_softplus() (in module probly.transformation.evidential.classification.test_classification)</a>
+</li>
+        <li><a href="api/probly.transformation.evidential.classification.test_classification.html#probly.transformation.evidential.classification.test_classification.test_only_one_layer_is_replaced">test_only_one_layer_is_replaced() (in module probly.transformation.evidential.classification.test_classification)</a>
+</li>
+        <li><a href="api/probly.transformation.evidential.classification.test_classification.html#probly.transformation.evidential.classification.test_classification.test_output_has_softplus_activation">test_output_has_softplus_activation() (in module probly.transformation.evidential.classification.test_classification)</a>
+</li>
+        <li><a href="api/probly.transformation.evidential.classification.test_classification.html#probly.transformation.evidential.classification.test_classification.test_single_layer_model_edge_case">test_single_layer_model_edge_case() (in module probly.transformation.evidential.classification.test_classification)</a>
+</li>
+        <li><a href="api/probly.transformation.evidential.classification.test_classification.html#probly.transformation.evidential.classification.test_classification.test_transformation_completes_successfully">test_transformation_completes_successfully() (in module probly.transformation.evidential.classification.test_classification)</a>
+</li>
         <li><a href="api/probly.utils.torch.html#probly.utils.torch.torch_collect_outputs">torch_collect_outputs() (in module probly.utils.torch)</a>
 </li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="api/probly.utils.torch.html#probly.utils.torch.torch_reset_all_parameters">torch_reset_all_parameters() (in module probly.utils.torch)</a>
 </li>
         <li><a href="api/probly.representation.credal_set.torch.html#probly.representation.credal_set.torch.TorchTensorCredalSet">TorchTensorCredalSet (class in probly.representation.credal_set.torch)</a>
 </li>
         <li><a href="api/probly.representation.sampling.torch_sample.html#probly.representation.sampling.torch_sample.TorchTensorSample">TorchTensorSample (class in probly.representation.sampling.torch_sample)</a>
 </li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="api/probly.quantification.regression.html#probly.quantification.regression.total_differential_entropy">total_differential_entropy() (in module probly.quantification.regression)</a>
 </li>
         <li><a href="api/probly.quantification.classification.html#probly.quantification.classification.total_entropy">total_entropy() (in module probly.quantification.classification)</a>
