@@ -1,15 +1,20 @@
-"""Extended and Improved Prototype implementation of First-Order data generator."""
+"""Full First-Order data generator."""
 
 from __future__ import annotations
 
+from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
-from pathlib import Path
-from typing import Any, Callable, Iterable, Mapping
-
 import json
+import logging
+from pathlib import Path
+from typing import Any, cast
+import warnings
 
 import torch
 import torch.nn.functional as F
+from torch.utils.data import DataLoader, Dataset
+
+logger = logging.getLogger(__name__)
 
 
 def _is_probabilities(x: torch.Tensor, atol: float = 1e-4) -> bool:
@@ -21,17 +26,17 @@ def _is_probabilities(x: torch.Tensor, atol: float = 1e-4) -> bool:
     """
     if x.numel() == 0:
         return False
-    min_ok = torch.all(x >= -atol)
-    max_ok = torch.all(x <= 1 + atol)
+    min_ok = bool(torch.all(x >= -atol))
+    max_ok = bool(torch.all(x <= 1 + atol))
     if not (min_ok and max_ok):
         return False
     sums = x.sum(dim=-1)
-    return torch.allclose(sums, torch.ones_like(sums), atol=atol, rtol=0)
+    return bool(torch.allclose(sums, torch.ones_like(sums), atol=atol, rtol=0))
 
 
 @dataclass
 class FirstOrderDataGenerator:
-    """Minimal First-Order data generator.
+    """Version First-Order data generator.
 
     Parameters
     ----------
@@ -48,7 +53,7 @@ class FirstOrderDataGenerator:
         use as is. Default of course 'auto'.
     output_transform:
         func to convert raw model output to probs. If called
-        this is over `output_mode`.
+        this is over output_mode.
     input_getter:
         func to extract model input from dataset item.
         Signature: input_getter(sample) -> model_input
@@ -65,14 +70,14 @@ class FirstOrderDataGenerator:
     input_getter: Callable[[Any], Any] | None = None
     model_name: str | None = None
 
-    def to_device(self, x: Any) -> Any:
+    def to_device(self, x: object) -> object:
         """Move tensor/nested tensors to the same device if applicable."""
         if isinstance(x, torch.Tensor):
             return x.to(self.device)
         if isinstance(x, (list, tuple)):
             return type(x)(self.to_device(xx) for xx in x)
         if isinstance(x, Mapping):
-            return type(x)({k: self.to_device(v) for k, v in x.items()})
+            return {k: self.to_device(v) for k, v in x.items()}
         return x
 
     def to_probs(self, outputs: torch.Tensor) -> torch.Tensor:
@@ -88,7 +93,7 @@ class FirstOrderDataGenerator:
         # auto
         return outputs if _is_probabilities(outputs) else F.softmax(outputs, dim=-1)
 
-    def prepares_batch_inp(self, sample: Any) -> Any:
+    def prepares_batch_inp(self, sample: object) -> object:
         """Prepare model input from dataset sample."""
         if self.input_getter is not None:
             return self.input_getter(sample)
@@ -96,7 +101,7 @@ class FirstOrderDataGenerator:
             return sample[0]
         return sample
 
-    def extract_input(self, sample: Any) -> Any:
+    def extract_input(self, sample: object) -> object:
         """Extract model input from dataset sample."""
         if self.input_getter is not None:
             return self.input_getter(sample)
@@ -108,7 +113,7 @@ class FirstOrderDataGenerator:
     @torch.no_grad()
     def generate_distributions(
         self,
-        dataset_or_loader: Any,
+        dataset_or_loader: object,
         *,
         progress: bool = True,
     ) -> dict[int, list[float]]:
@@ -117,12 +122,12 @@ class FirstOrderDataGenerator:
         Parameters
         ----------
         dataset_or_loader:
-            A `torch.utils.data.Dataset` or `torch.utils.data.DataLoader`.
+            A torch.utils.data.Dataset or torch.utils.data.DataLoader.
             Items should be tensors or tuples/dicts that have tensors.
         progress:
             If True prints simple progress information in terminal output for user to see that progress is happening.
 
-        Returns
+        Returns:
         -------
         dict[int, list[float]]
             Mapping from dataset index to list of probabilities.
@@ -132,7 +137,7 @@ class FirstOrderDataGenerator:
             loader = dataset_or_loader
             dataset_len = len(loader.dataset) if loader.dataset is not None else None
         else:
-            dataset = dataset_or_loader
+            dataset = cast("Dataset", dataset_or_loader)
             dataset_len = len(dataset)
             loader = torch.utils.data.DataLoader(dataset, batch_size=self.batch_size, shuffle=False)
 
@@ -164,24 +169,26 @@ class FirstOrderDataGenerator:
 
             start_idx += batch_size
             if progress:
-                # showing minimal textual progress
-                print(f"[FirstOrderDataGenerator] Batch {batch_idx + 1}/{total_batches}\r", end="")
+                logger.info("[FirstOrderDataGenerator] Batch %d/%d", batch_idx + 1, total_batches)
 
-        # newline after progress
+        # progress end marker
         if progress:
-            print()
+            logger.info("[FirstOrderDataGenerator] Finished %d batches", total_batches)
 
         # warn if generated count differs from dataset length
         if dataset_len is not None and len(distributions) != dataset_len:
             # Do not raise hard error (streaming loaders may mismatch) just warn
-            print(
-                f"[FirstOrderDataGenerator] WARNING ('>_<): generated {len(distributions)} distributions,"
-                f" but dataset length is {dataset_len}."
+            warnings.warn(
+                (
+                    f"[FirstOrderDataGenerator] generated {len(distributions)} distributions, "
+                    f"but dataset length is {dataset_len}."
+                ),
+                stacklevel=2,
             )
 
         return distributions
 
-# JSON save/load methods
+    # JSON save/load methods
     def save_distributions(
         self,
         path: str | Path,
@@ -189,8 +196,7 @@ class FirstOrderDataGenerator:
         *,
         meta: dict[str, Any] | None = None,
     ) -> None:
-        """Save distributions and minimal metadata as JSON. Non readable  -> readable (later during load: see comment in method load_distributions)
-        """
+        """Save distributions and minimal metadata as JSON."""
         path = Path(path)
         serializable = {
             "meta": {
@@ -206,7 +212,7 @@ class FirstOrderDataGenerator:
     def load_distributions(self, path: str | Path) -> tuple[dict[int, list[float]], dict[str, Any]]:
         """Load distributions and metadata from JSON.
 
-        Returns
+        Returns:
         -------
         (distributions, meta)
             distributions: dict[int, list[float]]
@@ -220,3 +226,88 @@ class FirstOrderDataGenerator:
         # Convert keys back to int
         distributions: dict[int, list[float]] = {int(k): list(v) for k, v in dists_raw.items()}
         return distributions, meta
+
+
+class FirstOrderDataset(Dataset):
+    """Wrap an existing dataset (like base_dataset) with first-order distributions for training/eval.
+
+    Returns items as (input, distribution) if the base dataset yields only input,
+    or (input, label, distribution) if the base dataset yields (input, label).
+    """
+
+    def __init__(
+        self,
+        base_dataset: Dataset,
+        distributions: Mapping[int, Iterable[float]],
+        input_getter: Callable[[object], object] | None = None,
+    ) -> None:
+        """Initialize with base dataset and index-aligned distributions."""
+        self.base_dataset = base_dataset
+        self.distributions: dict[int, list[float]] = {int(k): list(v) for k, v in distributions.items()}
+        self.input_getter = input_getter
+
+        # Soft check only if base_dataset supports length (__len__).
+        try:
+            n = len(base_dataset)
+            if len(self.distributions) != n:
+                warnings.warn(
+                    (
+                        f"[FirstOrderDataset] distributions count {len(self.distributions)} "
+                        f"does not match dataset length {n}."
+                    ),
+                    stacklevel=2,
+                )
+        except TypeError:
+            # Dataset doesnt support len(base_dataset) (no __len__).
+            warnings.warn(
+                "[FirstOrderDataset] base_dataset has no length? ; validation being skipped.",
+                stacklevel=2,
+            )
+
+    def __len__(self) -> int:
+        """Return number of samples in the base dataset."""
+        return len(self.base_dataset)
+
+    def _get_input(self, sample: object) -> object:
+        """Extract input from a sample, using input_getter if provided."""
+        if self.input_getter is not None:
+            return self.input_getter(sample)
+        if isinstance(sample, (list, tuple)) and len(sample) >= 1:
+            return sample[0]
+        return sample
+
+    def __getitem__(self, idx: int) -> object:
+        """Return input (+ optional label) and distribution at index."""
+        sample = self.base_dataset[idx]
+        dist = self.distributions.get(idx)
+        if dist is None:
+            msg = f"No distribution for index {idx}."
+            raise KeyError(msg)
+
+        dist_tensor = torch.tensor(dist, dtype=torch.float32)
+        if isinstance(sample, (list, tuple)) and len(sample) >= 2:
+            inp, lbl = sample[0], sample[1]
+            return inp, lbl, dist_tensor
+        inp = self._get_input(sample)
+        return inp, dist_tensor
+
+
+def output_fo_dataloader(
+    base_dataset: Dataset,
+    distributions: Mapping[int, Iterable[float]],
+    *,
+    batch_size: int = 64,
+    shuffle: bool = False,
+    num_workers: int = 0,
+    pin_memory: bool = False,
+    input_getter: Callable[[Any], Any] | None = None,
+) -> DataLoader:
+    """Creates DataLoader pairing inputs (labels if any available) with first-order distribs."""
+    firstorderdataset = FirstOrderDataset(base_dataset, distributions, input_getter=input_getter)
+    return DataLoader(
+        firstorderdataset,
+        batch_size=batch_size,
+        shuffle=shuffle,
+        num_workers=num_workers,
+        pin_memory=pin_memory,
+    )
