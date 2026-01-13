@@ -11,24 +11,31 @@ from .base_generator import BaseGenerator
 
 class TensorFlowGenerator(BaseGenerator):
     """
-    TensorFlow 版本：
-    - 使用 np.savez_compressed 保存为 .npz（键保持不变）
-    - 加载后再转回 tf.Tensor
+    TensorFlow implementation.
+
+    - Uses np.savez_compressed to store tensors as a .npz file
+      (keys are preserved).
+    - Loaded arrays are converted back to tf.Tensor.
     """
 
     @staticmethod
     def _summarize_tensor_dict(tensor_dict: Dict[str, Any]) -> str:
-        # 生成一个“Tensor 体量报告”shape\dtype\内存大小
+        # Generate a summary of tensor shapes, dtypes, and memory usage
         lines: list[str] = []
         total_mb = 0.0
         for key, val in tensor_dict.items():
             if not isinstance(val, (tf.Tensor, tf.Variable)):
-                raise TypeError(f"Expected tf.Tensor/tf.Variable for key='{key}', got {type(val)}")
+                raise TypeError(
+                    f"Expected tf.Tensor or tf.Variable for key='{key}', got {type(val)}"
+                )
             t = tf.convert_to_tensor(val)
             nbytes = int(tf.size(t).numpy()) * t.dtype.size
             size_mb = nbytes / (1024**2)
             total_mb += size_mb
-            lines.append(f"  - {key}: shape={tuple(t.shape)}, dtype={t.dtype.name}, {size_mb:.2f} MB")
+            lines.append(
+                f"  - {key}: shape={tuple(t.shape)}, dtype={t.dtype.name}, "
+                f"{size_mb:.2f} MB"
+            )
         lines.append(f"Total size: {total_mb:.2f} MB")
         return "\n".join(lines)
 
@@ -40,8 +47,10 @@ class TensorFlowGenerator(BaseGenerator):
         verbose: bool = True,
     ) -> None:
         """
-        TensorFlow 没有等价的 torch.save(dict_of_tensors)
-        将 TensorFlow tensor_dict 保存为 .npz 文件（压缩）
+        TensorFlow does not provide an equivalent of torch.save(dict_of_tensors).
+
+        This method stores a TensorFlow tensor dictionary as a compressed
+        .npz file.
         """
         self._validate_mapping(tensor_dict)
 
@@ -51,7 +60,9 @@ class TensorFlowGenerator(BaseGenerator):
         arrays: Dict[str, np.ndarray] = {}
         for k, v in tensor_dict.items():
             if not isinstance(v, (tf.Tensor, tf.Variable)):
-                raise TypeError(f"Expected tf.Tensor/tf.Variable for key='{k}', got {type(v)}")
+                raise TypeError(
+                    f"Expected tf.Tensor or tf.Variable for key='{k}', got {type(v)}"
+                )
             arrays[k] = tf.convert_to_tensor(v).numpy()
 
         np.savez_compressed(save_path, **arrays)
@@ -68,11 +79,11 @@ class TensorFlowGenerator(BaseGenerator):
         verbose: bool = True,
     ) -> Dict[str, Any]:
         """
-        从 .npz 加载为 tf.Tensor dict
+        Load a tensor dictionary from a .npz file.
 
         device:
-          - None：默认设备
-          - '/CPU:0'、'/GPU:0' 等：在指定设备上构建 tensor
+          - None: use the default device
+          - '/CPU:0', '/GPU:0', etc.: create tensors on the specified device
         """
         if not os.path.exists(load_path):
             raise FileNotFoundError(f"File not found: {load_path}")
