@@ -76,12 +76,17 @@ class JAXDataGenerator(BaseDataGenerator[Callable[[jnp.ndarray], jnp.ndarray], t
 
         return self.results
 
+
     def _count(self, values: jnp.ndarray) -> dict[int, int]:
-        counts: dict[int, int] = {}
-        for val in values.tolist():
-            key = int(val)
-            counts[key] = counts.get(key, 0) + 1
-        return counts
+        values = values.astype(jnp.int32)
+        counts_arr = jnp.bincount(values)
+
+        return {
+            int(i): int(c)
+            for i, c in enumerate(counts_arr)
+            if c > 0
+        }
+
 
     def save(self, path: str) -> None:
         """Persist generated results to a JSON file at path."""
